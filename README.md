@@ -6,7 +6,6 @@ Basically, this repository is to run *[StaticFusion](https://github.com/raluca-s
 
 Original author: Hyungtae Lim (shapelim@kaist.ac.kr)
 
-======
 
 ## Objective
 
@@ -20,12 +19,14 @@ An RGB image and a depth whose types are `sensors_msgs::CompressedImage` is save
 
 3. ```roslaunch rgbdsaver parse_rgbd.launch```
 
-4. Thus, the organisational structure of the dataset is as follows:
+4. After finishing play the ros bag file, run `rostopic pub /savetext std_msgs/Float32 "data: 0.0"` to save **rgbd_assoc.txt** file. (line 29~39 in `node/src/RGBDSaver.cpp`)
+
+5. Thus, the organisational structure of the dataset is as follows:
 
 ``` 
 /$savedir$/rgb/   - folder containing all color images
 /$savedir$/depth/ - folder containing all depth images
-/$savedir$/rgbd_assoc.txt - folder sequences for StaticFusion (may not necessary). 
+/$savedir$/rgbd_assoc.txt - Sequences for StaticFusion. If your goal is not to run StaticFusion, this file may not be necessary.
 ```
 
 ## Descriptions
@@ -38,7 +39,7 @@ An RGB image and a depth whose types are `sensors_msgs::CompressedImage` is save
 ***depth***
 
 * It is saved as 16 bit monochrome in PNG. That is, a depth image is saved to png file whose type is **CV_16UC1**, or `unsigned short` on millimeter scale. 
-* In line 65 in `node/src/RGBDSaver.cpp`, a depth is originally **CV_32FC1** which is on meter scale.
+* A decoded depth data is originally **CV_32FC1** which is on meter scale (line 65 in `node/src/RGBDSaver.cpp`).
 * However, **CV_32FC1** is automatically casted to **8UC1** when saving the data using `cv::imwrite()` :(. That's why we save the depth to **CV_16UC1**.
 * `nan` data is substituted with 0 according to `std::isnan()`.
 
