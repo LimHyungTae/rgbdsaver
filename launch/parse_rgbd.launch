@@ -1,0 +1,7 @@
+<launch>
+<node name="rgbdsaver" pkg="rgbdsaver" type="rgbdsaver" output="screen">
+    <rosparam param="/savedir">"/home/shapelim/hdd2/sw_gpslam_rosbag/3f"</rosparam>		
+    <rosparam param="/rgb_msgname">"/rgb/image_raw/compressed"</rosparam>		
+    <rosparam param="/depth_msgname">"/depth_to_rgb/image_raw/compressedDepth"</rosparam>		
+</node>
+</launch>

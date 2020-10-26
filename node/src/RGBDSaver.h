@@ -45,6 +45,7 @@ namespace staticfusionparser
     ros::Publisher m_pub_node;/**< Node publisher */
 
     std::string savedir;
+    std::string rgb_msgname, depth_msgname;
     int init_ts;
     int final_ts;
     bool is_initial = true;

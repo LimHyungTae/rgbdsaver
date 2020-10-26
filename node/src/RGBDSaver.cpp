@@ -5,15 +5,20 @@ using namespace staticfusionparser;
 
 void RGBDSaver::getparam()
 {
-  m_nh.param<std::string>("savedir", savedir, "/home/shapelim/hdd2/sw_gpslam_rosbag/3f");
+  m_nh.param<std::string>("/savedir", savedir, "/home/shapelim/hdd2/sw_gpslam_rosbag/3f");
+  m_nh.param<std::string>("/rgb_msgname", rgb_msgname, "/rgb/compressed");
+  m_nh.param<std::string>("/depth_msgname", depth_msgname, "/depth/compressed");
 }
 
 
 RGBDSaver::RGBDSaver()
 {
   getparam();
-  static ros::Subscriber sub2 = m_nh.subscribe<sensor_msgs::CompressedImage>("/rgb/image_raw/compressed",10000,&RGBDSaver::callback_image,this);
-  static ros::Subscriber sub3 = m_nh.subscribe<sensor_msgs::CompressedImage>("/depth_to_rgb/image_raw/compressedDepth",10000,&RGBDSaver::callback_depth,this);
+  std::cout<<"Target RGB msg name: "<<rgb_msgname<<std::endl;
+  std::cout<<"Target Depth msg name: "<<depth_msgname<<std::endl;
+
+  static ros::Subscriber sub2 = m_nh.subscribe<sensor_msgs::CompressedImage>(rgb_msgname, 10000, &RGBDSaver::callback_image,this);
+  static ros::Subscriber sub3 = m_nh.subscribe<sensor_msgs::CompressedImage>(depth_msgname, 10000, &RGBDSaver::callback_depth,this);
   static ros::Subscriber sub_flag = m_nh.subscribe<std_msgs::Float32>("/savetext",10, &RGBDSaver::callback_flag, this);
 }
 
