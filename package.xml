@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package>
+  <name>rgbdsaver</name>
+  <version>0.0.0</version>
+  <description>staticfusionparser FOR GPSLSAM v2</description>
+
+  <maintainer email="shapelim@kaist.ac.kr">Hyungtae Lim</maintainer>
+  <license>MIT</license>
+  
+  <buildtool_depend>catkin</buildtool_depend>
+  
+  <build_depend>roscpp</build_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>message_generation</build_depend>
+
+  <run_depend>roscpp</run_depend>
+  <run_depend>rospy</run_depend>
+  <run_depend>message_generation</run_depend>
+  <run_depend>message_runtime</run_depend>
+
+  <export>
+  </export>
+</package>
