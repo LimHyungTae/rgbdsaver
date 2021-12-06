@@ -1,7 +1,11 @@
 <launch>
 <node name="rgbdsaver" pkg="rgbdsaver" type="rgbdsaver" output="screen">
-    <rosparam param="/savedir">"/home/shapelim/hdd2/sw_gpslam_rosbag/3f"</rosparam>		
+    <rosparam param="/savedir">"/media/shapelim/UX960NVMe1/tro_rgbd"</rosparam>		
     <rosparam param="/rgb_msgname">"/rgb/image_raw/compressed"</rosparam>		
     <rosparam param="/depth_msgname">"/depth_to_rgb/image_raw/compressedDepth"</rosparam>		
+    <rosparam param="/fx">612.344604</rosparam>		
+    <rosparam param="/fy">612.165466</rosparam>		
+    <rosparam param="/cx">637.609375</rosparam>		
+    <rosparam param="/cy">369.301300</rosparam>		
 </node>
 </launch>

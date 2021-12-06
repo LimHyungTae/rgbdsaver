@@ -23,7 +23,11 @@ generate_messages(
 
 find_package(Boost REQUIRED)
 find_package(OpenCV REQUIRED)
-
+find_package(roscpp)
+find_package(pcl_conversions)
+find_package(pcl_ros)
+find_package(sensor_msgs)
+find_package(PCL 1.7 REQUIRED)
 
 catkin_package(
     #  INCLUDE_DIRS include
@@ -34,11 +38,10 @@ catkin_package(
 
 include_directories(
     ${catkin_INCLUDE_DIRS}
-    ${CERES_INCLUDE_DIRS}
+    ${PCL_INCLUDE_DIRS}
+    ${OpenCV_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS}
 )
-include_directories(${OpenCV_INCLUDE_DIRS})
-include_directories(${Boost_INCLUDE_DIRS})
-
 
 SET(CMAKE_CXX_FLAGS "-std=c++17 -O2 -g -Wall -msse3 ${CMAKE_CXX_FLAGS}")
 

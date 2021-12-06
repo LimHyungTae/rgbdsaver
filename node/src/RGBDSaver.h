@@ -20,139 +20,147 @@
 #include <sensor_msgs/Image.h>
 #include <iomanip>
 #include <cv_bridge/cv_bridge.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl/common/common.h>
+#include <pcl/point_types.h>
+#include <pcl/conversions.h>
 
+#include <sensor_msgs/PointCloud2.h>
 
-enum compressionFormat
-{
-  UNDEFINED = -1, INV_DEPTH
+enum compressionFormat {
+    UNDEFINED = -1, INV_DEPTH
 };
 
-struct ConfigHeader
-{
-  // compression format
-  compressionFormat format;
-  // quantization parameters (used in depth image compression)
-  float depthParam[2];
+struct ConfigHeader {
+    // compression format
+    compressionFormat format;
+    // quantization parameters (used in depth image compression)
+    float             depthParam[2];
 };
 
-namespace staticfusionparser
-{
-  class RGBDSaver
-  {
-  private:
+namespace staticfusionparser {
+    class RGBDSaver {
+    private:
 
-    ros::NodeHandle m_nh;/**< Ros node handler */
-    ros::Publisher m_pub_node;/**< Node publisher */
+        ros::NodeHandle nh;/**< Ros node handler */
+        ros::Publisher  cloud_pub;
 
-    std::string savedir;
-    std::string rgb_msgname, depth_msgname;
-    int init_ts;
-    int final_ts;
-    bool is_initial = true;
+        std::string savedir;
+        std::string rgb_msgname;
+        std::string depth_msgname;
+        std::string rgb_order;
+        int         init_ts;
+        int         final_ts;
+        bool        is_initial = true;
+        bool        depth2pc;
 
-    void getparam();
-    void callback_flag(const std_msgs::Float32::ConstPtr& msg);
-    void callback_image(const sensor_msgs::CompressedImage::ConstPtr& msg);
-    void callback_depth(const sensor_msgs::CompressedImage::ConstPtr& msg);
+        float fx;
+        float fy;
+        float cx;
+        float cy;
 
-    std::string to_zero_lead(const int value, const unsigned precision)
-    {
-         std::ostringstream oss;
-         oss << std::setw(precision) << std::setfill('0') << value;
-         return oss.str();
-    }
-    cv::Mat sensorImg2mat(sensor_msgs::Image sensorImg);
 
-    sensor_msgs::Image::Ptr decodeCompressedDepthImage(const sensor_msgs::CompressedImage& message)
-    {
-      cv_bridge::CvImagePtr cv_ptr(new cv_bridge::CvImage);
+        void getparam();
 
-      // Copy message header
-      cv_ptr->header = message.header;
+        void callback_flag(const std_msgs::Float32::ConstPtr &msg);
 
-      // Assign image encoding
-      const size_t split_pos = message.format.find(';');
-      const std::string image_encoding = message.format.substr(0, split_pos);
-      std::string compression_format;
-      // Older version of compressed_depth_image_transport supports only png.
-      compression_format = "png";
+        void callback_image(const sensor_msgs::CompressedImage::ConstPtr &msg);
 
-      cv_ptr->encoding = image_encoding;
+        void callback_depth(const sensor_msgs::CompressedImage::ConstPtr &msg);
 
-      // Decode message data
-      if (message.data.size() > sizeof(ConfigHeader))
-      {
+        std::string to_zero_lead(const int value, const unsigned precision) {
+            std::ostringstream oss;
+            oss << std::setw(precision) << std::setfill('0') << value;
+            return oss.str();
+        }
 
-        // Read compression type from stream
-        ConfigHeader compressionConfig;
-        memcpy(&compressionConfig, &message.data[0], sizeof(compressionConfig));
+        void mat2pcd(const cv::Mat& depth, pcl::PointCloud<pcl::PointXYZ>& cloud);
 
-        // Get compressed image data
-        const std::vector<uint8_t> imageData(message.data.begin() + sizeof(compressionConfig), message.data.end());
+        void uvd2xyz(float u, float v, float d, pcl::PointXYZ& pt);
 
-        // Depth map decoding
-        float depthQuantA, depthQuantB;
+        cv::Mat sensorImg2mat(sensor_msgs::Image sensorImg);
 
-        // Read quantization parameters
-        depthQuantA = compressionConfig.depthParam[0];
-        depthQuantB = compressionConfig.depthParam[1];
-        if (image_encoding.compare("32FC1")==0)//(enc::bitDepth(image_encoding) == 32)
-        {
-          cv::Mat decompressed = cv::imdecode(imageData, cv::IMREAD_UNCHANGED);
+        sensor_msgs::Image::Ptr decodeCompressedDepthImage(const sensor_msgs::CompressedImage &message) {
+            cv_bridge::CvImagePtr cv_ptr(new cv_bridge::CvImage);
 
-          size_t rows = decompressed.rows;
-          size_t cols = decompressed.cols;
+            // Copy message header
+            cv_ptr->header = message.header;
 
-          if ((rows > 0) && (cols > 0))
-          {
-            cv_ptr->image = cv::Mat(rows, cols, CV_32FC1);
+            // Assign image encoding
+            const size_t      split_pos      = message.format.find(';');
+            const std::string image_encoding = message.format.substr(0, split_pos);
+            std::string       compression_format;
+            // Older version of compressed_depth_image_transport supports only png.
+            compression_format = "png";
 
-            // Depth conversion
-            cv::MatIterator_<float> itDepthImg = cv_ptr->image.begin<float>(),
-                itDepthImg_end = cv_ptr->image.end<float>();
-            cv::MatConstIterator_<unsigned short> itInvDepthImg = decompressed.begin<unsigned short>(),
-                itInvDepthImg_end = decompressed.end<unsigned short>();
+            cv_ptr->encoding = image_encoding;
 
-            for (; (itDepthImg != itDepthImg_end) && (itInvDepthImg != itInvDepthImg_end); ++itDepthImg, ++itInvDepthImg)
-            {
-              // check for NaN & max depth
-              if (*itInvDepthImg)
-              {
-                *itDepthImg = depthQuantA / ((float)*itInvDepthImg - depthQuantB);
-              }
-              else
-              {
-                *itDepthImg = std::numeric_limits<float>::quiet_NaN();
-              }
+            // Decode message data
+            if (message.data.size() > sizeof(ConfigHeader)) {
+
+                // Read compression type from stream
+                ConfigHeader compressionConfig;
+                memcpy(&compressionConfig, &message.data[0], sizeof(compressionConfig));
+
+                // Get compressed image data
+                const std::vector <uint8_t> imageData(message.data.begin() + sizeof(compressionConfig), message.data.end());
+
+                // Depth map decoding
+                float depthQuantA, depthQuantB;
+
+                // Read quantization parameters
+                depthQuantA = compressionConfig.depthParam[0];
+                depthQuantB = compressionConfig.depthParam[1];
+                if (image_encoding.compare("32FC1") == 0)//(enc::bitDepth(image_encoding) == 32)
+                {
+                    cv::Mat decompressed = cv::imdecode(imageData, cv::IMREAD_UNCHANGED);
+
+                    size_t rows = decompressed.rows;
+                    size_t cols = decompressed.cols;
+
+                    if ((rows > 0) && (cols > 0)) {
+                        cv_ptr->image = cv::Mat(rows, cols, CV_32FC1);
+
+                        // Depth conversion
+                        cv::MatIterator_<float>               itDepthImg        = cv_ptr->image.begin<float>(),
+                                                              itDepthImg_end    = cv_ptr->image.end<float>();
+                        cv::MatConstIterator_<unsigned short> itInvDepthImg     = decompressed.begin<unsigned short>(),
+                                                              itInvDepthImg_end = decompressed.end<unsigned short>();
+
+                        for (; (itDepthImg != itDepthImg_end) && (itInvDepthImg != itInvDepthImg_end); ++itDepthImg, ++itInvDepthImg) {
+                            // check for NaN & max depth
+                            if (*itInvDepthImg) {
+                                *itDepthImg = depthQuantA / ((float) *itInvDepthImg - depthQuantB);
+                            } else {
+                                *itDepthImg = std::numeric_limits<float>::quiet_NaN();
+                            }
+                        }
+
+                        // Publish message to user callback
+                        return cv_ptr->toImageMsg();
+                    }
+                } else {
+                    cv_ptr->image = cv::imdecode(imageData, cv::IMREAD_UNCHANGED);
+
+                    size_t rows = cv_ptr->image.rows;
+                    size_t cols = cv_ptr->image.cols;
+
+                    if ((rows > 0) && (cols > 0)) {
+                        // Publish message to user callback
+                        return cv_ptr->toImageMsg();
+                    }
+                }
             }
-
-            // Publish message to user callback
-            return cv_ptr->toImageMsg();
-          }
+            return sensor_msgs::Image::Ptr();
         }
-        else
-        {
-          cv_ptr->image = cv::imdecode(imageData, cv::IMREAD_UNCHANGED);
-
-          size_t rows = cv_ptr->image.rows;
-          size_t cols = cv_ptr->image.cols;
-
-          if ((rows > 0) && (cols > 0))
-          {
-            // Publish message to user callback
-            return cv_ptr->toImageMsg();
-          }
-        }
-      }
-      return sensor_msgs::Image::Ptr();
-    }
 
 
-  public:
-    RGBDSaver();
-    ~RGBDSaver();
+    public:
+        RGBDSaver();
 
-  };
+        ~RGBDSaver();
+
+    };
 }
 
 
