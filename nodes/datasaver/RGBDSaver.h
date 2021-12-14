@@ -24,8 +24,16 @@
 #include <pcl/common/common.h>
 #include <pcl/point_types.h>
 #include <pcl/conversions.h>
+#include <pcl/common/transforms.h>
+#include <geometry_msgs/Pose.h>
+
+#include "rgbdsaver/node.h"
 
 #include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/CameraInfo.h>
+
+#define MIN_DEPTH 0.3
+#define MAX_DEPTH 15.0
 
 enum compressionFormat {
     UNDEFINED = -1, INV_DEPTH
@@ -38,6 +46,19 @@ struct ConfigHeader {
     float             depthParam[2];
 };
 
+template<class T,size_t N>
+boost::array<T,N> stdVec2Boost( const std::vector<T> & v )
+{
+    //assert(v.size() == N);
+    boost::array<T,N> r;
+    std::copy( v.begin(), v.end(), r.begin() );
+    return r;
+}
+
+
+
+
+
 namespace staticfusionparser {
     class RGBDSaver {
     private:
@@ -45,22 +66,26 @@ namespace staticfusionparser {
         ros::NodeHandle nh;/**< Ros node handler */
         ros::Publisher  cloud_pub;
 
+        sensor_msgs::CameraInfo camInfo;
         std::string savedir;
-        std::string rgb_msgname;
-        std::string depth_msgname;
         std::string rgb_order;
         int         init_ts;
         int         final_ts;
         bool        is_initial = true;
-        bool        depth2pc;
+        bool        pub_pc;
 
-        float fx;
-        float fy;
-        float cx;
-        float cy;
+        bool            flag_caminfoupdate = false;
+        Eigen::Matrix3f matK;
+        double          range_min          = 0.35;
+        double          range_max          = 0.5;
 
+        Eigen::Matrix4f cam2rt;
 
         void getparam();
+
+        void update_caminfo(sensor_msgs::CameraInfo caminfo);
+
+        void update_range(double min, double max);
 
         void callback_flag(const std_msgs::Float32::ConstPtr &msg);
 
@@ -68,17 +93,19 @@ namespace staticfusionparser {
 
         void callback_depth(const sensor_msgs::CompressedImage::ConstPtr &msg);
 
+        void callback_node(const rgbdsaver::node::ConstPtr& msg);
+
+        Eigen::Matrix4f geoPose2eigen(geometry_msgs::Pose geoPose);
+
         std::string to_zero_lead(const int value, const unsigned precision) {
             std::ostringstream oss;
             oss << std::setw(precision) << std::setfill('0') << value;
             return oss.str();
         }
 
-        void mat2pcd(const cv::Mat& depth, pcl::PointCloud<pcl::PointXYZ>& cloud);
-
-        void uvd2xyz(float u, float v, float d, pcl::PointXYZ& pt);
-
         cv::Mat sensorImg2mat(sensor_msgs::Image sensorImg);
+
+        pcl::PointCloud<pcl::PointXYZRGB> getColoredPointCloud(cv::Mat img, cv::Mat depth, int resize=1);
 
         sensor_msgs::Image::Ptr decodeCompressedDepthImage(const sensor_msgs::CompressedImage &message) {
             cv_bridge::CvImagePtr cv_ptr(new cv_bridge::CvImage);

@@ -13,6 +13,8 @@ An RGB image and a depth whose types are `sensors_msgs::CompressedImage` is save
 
 ## How To Use
 
+### Task 1. For *staticfusion*
+
 1. Revise the rosparams in `launch/parse_rgbd.launch`.
 
 2. Play your own rosbag file that contains corresponding RGB and depth data.
@@ -27,6 +29,12 @@ An RGB image and a depth whose types are `sensors_msgs::CompressedImage` is save
 /$savedir$/rgb/   - folder containing all color images
 /$savedir$/depth/ - folder containing all depth images
 /$savedir$/rgbd_assoc.txt - Sequences for StaticFusion. If your goal is not to run StaticFusion, this file may not be necessary.
+```
+
+### Task 2. For saving colored pointcloud
+
+```
+$ roslaunch rgbdsaver sync_and_save.launch
 ```
 
 ## Descriptions

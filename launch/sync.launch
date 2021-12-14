@@ -1,0 +1,14 @@
+<launch>
+<rosparam command="load" file="$(find rgbdsaver)/config/params.yaml" />
+
+<node name="nodegen" pkg="rgbdsaver" type="nodegen" output="screen">
+    # SUBSCRIBE
+    <remap from="odom" to="/jackal_velocity_controller/odom" />
+    <remap from="image" to="/rgb/image_rect_color/compressed" />
+    <remap from="depth" to="/depth_to_rgb/sw_registered/image_rect_raw/compressedDepth" />
+    # PUBLISH
+    <remap from="/nodegen/node" to="/node/node"/>
+
+</node>
+
+</launch>

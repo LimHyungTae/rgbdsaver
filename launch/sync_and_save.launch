@@ -1,0 +1,22 @@
+<launch>
+<rosparam command="load" file="$(find rgbdsaver)/config/params.yaml" />
+
+<node name="rgbdsaver" pkg="rgbdsaver" type="rgbdsaver" output="screen">
+    <rosparam param="/savedir">"/media/shapelim/UX960NVMe1/tro_rgbd"</rosparam>		
+    <rosparam param="/depth2pc">true</rosparam>		
+    
+    <remap from="/saver/image" to="/set_image_name" />
+    <remap from="/saver/depth" to="/set_depth_name" />
+</node>
+
+<node name="nodegen" pkg="rgbdsaver" type="nodegen" output="screen">
+    # SUBSCRIBE
+    <remap from="odom" to="/jackal_velocity_controller/odom" />
+    <remap from="image" to="/rgb/image_rect_color/compressed" />
+    <remap from="depth" to="/depth_to_rgb/sw_registered/image_rect_raw/compressedDepth" />
+    # PUBLISH
+    <remap from="/nodegen/node" to="/sync_node"/>
+
+</node>
+
+</launch>

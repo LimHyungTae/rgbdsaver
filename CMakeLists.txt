@@ -13,13 +13,18 @@ find_package(catkin REQUIRED COMPONENTS
     laser_geometry
 )
 
+add_message_files(
+   FILES
+   node.msg
+)
+
 generate_messages(
-    DEPENDENCIES
-    std_msgs
-    nav_msgs
-    geometry_msgs
-    sensor_msgs
-   )
+     DEPENDENCIES
+     std_msgs
+     nav_msgs
+     geometry_msgs
+     sensor_msgs
+)
 
 find_package(Boost REQUIRED)
 find_package(OpenCV REQUIRED)
@@ -30,10 +35,6 @@ find_package(sensor_msgs)
 find_package(PCL 1.7 REQUIRED)
 
 catkin_package(
-    #  INCLUDE_DIRS include
-    #  LIBRARIES beginner_tutorials
-    #  CATKIN_DEPENDS roscpp rospy std_msgs
-    #  DEPENDS system_lib
 )
 
 include_directories(
@@ -49,11 +50,19 @@ find_package(OpenMP QUIET)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   ${OpenMP_C_FLAGS}")
 
+FILE(GLOB datasaver_source
+    "nodes/datasaver/*.cpp"
+    "nodes/datasaver/*.h")
 
-FILE(GLOB rgbdsaver_source
-    "node/src/*.cpp"
-    "node/src/*.h")
-
-add_executable(rgbdsaver node/main.cpp ${rgbdsaver_source} )
+add_executable(rgbdsaver nodes/save.cpp ${datasaver_source} )
 add_dependencies(rgbdsaver rgbdsaver_generate_messages_cpp)
 target_link_libraries(rgbdsaver ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+
+FILE(GLOB nodegen_source
+        "nodes/nodegen/*.cpp"
+        "nodes/nodegen/*.h")
+
+add_executable(nodegen nodes/sync.cpp ${nodegen_source} )
+add_dependencies(nodegen rgbdsaver_generate_messages_cpp)
+target_link_libraries(nodegen ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+
