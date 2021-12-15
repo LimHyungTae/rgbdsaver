@@ -13,5 +13,5 @@ camera:
 
 tf: # 'X,Y,Z,Qx,Qy,Qz,Qw' for Each sensor.. Converter : https://www.andre-gaschler.com/rotationconverter/
 #    robot2camera    : [0.15     , 0,        0.8, 0.5, -0.5, 0.5, -0.5]
-    robot2camera    : [0.0 , 0.0, 0.42, 0.5, -0.5, 0.5, -0.5]
+    robot2camera    : [0.0 , 0.0, 0.0, 0.5, -0.5, 0.5, -0.5] # Note that sensor height is 0.42!
 

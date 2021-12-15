@@ -6,7 +6,8 @@ using namespace std;
 void RGBDSaver::getparam() {
     nh.param<std::string>("/savedir", savedir, "/home/shapelim/hdd2/sw_gpslam_rosbag/3f");
     nh.param<std::string>("/rgb_order", rgb_order, "RGB"); // "RGB" or "BGR"
-    nh.param<bool>("/pub_pc", pub_pc, true); // "RGB" or "BGR"
+    nh.param<bool>("/pub_pc", pub_pc, true);
+    nh.param<bool>("/save_pc", save_pc, true);
 
     std::vector<double> S;
     std::vector<double> K, R, D;
@@ -75,7 +76,7 @@ pcl::PointCloud<pcl::PointXYZRGB> RGBDSaver::getColoredPointCloud(cv::Mat img, c
         K = matK;
     }
     else
-    {
+    { // ToDo: Suppor resize model
 //        cv::resize(img,imgresize,cv::Size(img.size().width/resize,img.size().height/resize));
 //        cv::resize(depthresize,depthajust, imgresize.size());
 //        K << matK(0,0) /resize, matK(0,1) /resize, matK(0,2) /resize,
@@ -84,6 +85,8 @@ pcl::PointCloud<pcl::PointXYZRGB> RGBDSaver::getColoredPointCloud(cv::Mat img, c
     }
 
     std::vector<float> pts;
+    pts.reserve(depthresize.size().height * depthresize.size().width * 2);
+
     for (int           y        = 0; y < depthresize.size().height; y++) {
         for (int x = 0; x < depthresize.size().width; x++) {
             pts.push_back(x);
@@ -92,7 +95,6 @@ pcl::PointCloud<pcl::PointXYZRGB> RGBDSaver::getColoredPointCloud(cv::Mat img, c
         }
     }
     int                pts_size = pts.size() / 2;
-
     Eigen::MatrixXf pts1      = Eigen::Map<Eigen::Matrix<float, 2, Eigen::Dynamic> >(pts.data(), 2, pts_size);
     Eigen::MatrixXf pts1_ones = Eigen::Matrix<float, 1, Eigen::Dynamic>(1, pts_size);
     pts1_ones.setOnes();
@@ -102,6 +104,8 @@ pcl::PointCloud<pcl::PointXYZRGB> RGBDSaver::getColoredPointCloud(cv::Mat img, c
     Eigen::MatrixXf pts2_Kinv = K.inverse() * pts2;
 
     std::vector<float>     depths;
+    depths.reserve(depthresize.size().height * depthresize.size().width);
+
     for (int               y  = 0; y < depthresize.size().height; y++) {
         for (int x = 0; x < depthresize.size().width; x++) {
             if (depthresize.type() == CV_16UC1) {
@@ -223,25 +227,24 @@ void RGBDSaver::callback_node(const rgbdsaver::node::ConstPtr &msg) {
     pcl::PointCloud<pcl::PointXYZRGB> colored_pc;
     pcl::transformPointCloud(getColoredPointCloud(colorImg, depth), colored_pc, cam2rt);
 
-    pcl::PointXYZRGB minPt, maxPt;
-    pcl::getMinMax3D (colored_pc, minPt, maxPt);
-//    std::cout << "Max x: " << maxPt.x << std::endl;
-//    std::cout << "Max y: " << maxPt.y << std::endl;
-//    std::cout << "Max z: " << maxPt.z << std::endl;
-//    std::cout << "Min x: " << minPt.x << std::endl;
-//    std::cout << "Min y: " << minPt.y << std::endl;
-//    std::cout << "Min z: " << minPt.z << std::endl;
 
-    std::cout<< colored_pc.points.size() << std::endl;
+    static int count = 0;
     if (pub_pc) {
-        static int count = 0;
-        std::cout<< count++ << "th pc is published!" << std::endl;
-
+        std::cout<< count << "th pc is published!" << std::endl;
         sensor_msgs::PointCloud2 cloud_ROS;
         pcl::toROSMsg(colored_pc, cloud_ROS);
         cloud_ROS.header.stamp    = ros::Time::now();
         cloud_ROS.header.frame_id = "/map";
         cloud_pub.publish(cloud_ROS);
+    }
+
+    if (save_pc) {
+        static int count_for_save = 0;
+        if (++count % 5 == 0) {
+            std::string abs_save_path = (boost::format("%s/%06d.pcd") % savedir % count_for_save).str();
+            pcl::io::savePCDFileASCII(abs_save_path, colored_pc);
+            count_for_save++;
+        }
     }
 }
 

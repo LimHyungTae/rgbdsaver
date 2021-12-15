@@ -11,6 +11,7 @@
 #include <sstream>
 #include <fstream>
 #include <string>
+#include <boost/format.hpp>
 
 #include "opencv2/opencv.hpp"
 
@@ -22,6 +23,7 @@
 #include <cv_bridge/cv_bridge.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/common/common.h>
+#include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/conversions.h>
 #include <pcl/common/transforms.h>
@@ -73,6 +75,7 @@ namespace staticfusionparser {
         int         final_ts;
         bool        is_initial = true;
         bool        pub_pc;
+        bool        save_pc;
 
         bool            flag_caminfoupdate = false;
         Eigen::Matrix3f matK;

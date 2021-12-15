@@ -2,8 +2,9 @@
 <rosparam command="load" file="$(find rgbdsaver)/config/params.yaml" />
 
 <node name="rgbdsaver" pkg="rgbdsaver" type="rgbdsaver" output="screen">
-    <rosparam param="/savedir">"/media/shapelim/UX960NVMe1/tro_rgbd"</rosparam>		
-    <rosparam param="/depth2pc">true</rosparam>		
+    <rosparam param="/savedir">"/media/shapelim/UX960NVMe1/tro_rgbd/pcd"</rosparam>		
+    <rosparam param="/pub_pc">true</rosparam>		
+    <rosparam param="/save_pc">false</rosparam>		
     
     <remap from="/saver/image" to="/set_image_name" />
     <remap from="/saver/depth" to="/set_depth_name" />

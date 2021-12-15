@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(rgbdsaver)
 
+add_compile_options(-std=c++17)
+
 find_package(catkin REQUIRED COMPONENTS
     roscpp
     rospy
@@ -32,9 +34,12 @@ find_package(roscpp)
 find_package(pcl_conversions)
 find_package(pcl_ros)
 find_package(sensor_msgs)
-find_package(PCL 1.7 REQUIRED)
+find_package(PCL 1.8 REQUIRED)
 
 catkin_package(
+        INCLUDE_DIRS
+        LIBRARIES
+        CATKIN_DEPENDS roscpp rospy std_msgs
 )
 
 include_directories(
@@ -56,7 +61,7 @@ FILE(GLOB datasaver_source
 
 add_executable(rgbdsaver nodes/save.cpp ${datasaver_source} )
 add_dependencies(rgbdsaver rgbdsaver_generate_messages_cpp)
-target_link_libraries(rgbdsaver ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(rgbdsaver ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${PCL_LIBRARIES})
 
 FILE(GLOB nodegen_source
         "nodes/nodegen/*.cpp"
